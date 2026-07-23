@@ -228,18 +228,19 @@ function AccountAuth({ onAuthenticated }) {
   }
 
   return (
-    <main className="grid min-h-screen bg-cream lg:grid-cols-[.95fr_1.05fr]">
-      <section className="relative min-h-[300px] overflow-hidden lg:min-h-screen">
-        <img src="/images/agrotur-hero.jpg" alt="Paisagem rural verde ao amanhecer" className="absolute inset-0 size-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-agro-900/90 via-agro-900/25 to-transparent" />
-        <Link to="/" className="absolute left-6 top-6 text-lg font-black text-white sm:left-10 sm:top-9">AGRO <span className="text-sun">TUR</span></Link>
-        <div className="absolute bottom-8 left-6 max-w-xl text-white sm:bottom-12 sm:left-10">
-          <p className="font-display text-4xl leading-tight sm:text-5xl">As suas próximas histórias, num só lugar.</p>
-        </div>
-      </section>
+    <>
+      <main className="grid min-h-screen bg-cream lg:grid-cols-[.95fr_1.05fr]">
+        <section className="relative min-h-[300px] overflow-hidden lg:min-h-screen">
+          <img src="/images/agrotur-hero.jpg" alt="Paisagem rural verde ao amanhecer" className="absolute inset-0 size-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-agro-900/90 via-agro-900/25 to-transparent" />
+          <Link to="/" className="absolute left-6 top-6 text-lg font-black text-white sm:left-10 sm:top-9">AGRO <span className="text-sun">TUR</span></Link>
+          <div className="absolute bottom-8 left-6 max-w-xl text-white sm:bottom-12 sm:left-10">
+            <p className="font-display text-4xl leading-tight sm:text-5xl">As suas próximas histórias, num só lugar.</p>
+          </div>
+        </section>
 
-      <section className="flex items-center justify-center px-5 py-12 sm:px-10">
-        <form onSubmit={submit} className="w-full max-w-md">
+        <section className="flex items-center justify-center px-5 py-12 sm:px-10">
+          <form onSubmit={submit} className="w-full max-w-md">
           <span className="grid size-12 place-items-center rounded-full bg-agro-100 text-agro-800"><UserRound /></span>
           <p className="mt-7 text-xs font-bold uppercase tracking-[.22em] text-agro-600">Conta do visitante</p>
           <h1 className="mt-3 font-display text-4xl">{mode === "login" ? "Entre na sua conta." : "Crie a sua conta."}</h1>
@@ -290,8 +291,10 @@ function AccountAuth({ onAuthenticated }) {
             {loading ? "A processar…" : mode === "login" ? "Entrar" : "Criar conta"}
           </Button>
           <Link to="/dashboard" className="mt-5 block text-center text-xs font-bold text-stone-500">Acesso do gestor ou fazendeiro</Link>
-        </form>
-      </section>
-    </main>
+          </form>
+        </section>
+      </main>
+      <Chatbot />
+    </>
   );
 }
