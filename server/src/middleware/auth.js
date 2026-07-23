@@ -12,6 +12,18 @@ export function requireAuth(req, res, next) {
   }
 }
 
+export function optionalAuth(req, res, next) {
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (!token) return next();
+
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: "Sessão inválida ou expirada." });
+  }
+}
+
 export function allowRoles(...roles) {
   return (req, res, next) => {
     if (!req.user) {

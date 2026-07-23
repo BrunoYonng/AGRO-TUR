@@ -3,6 +3,41 @@ import OpenAI from "openai";
 const SUPPORTED_PROVIDERS = ["gemini", "groq", "openai"];
 
 export const CHAT_MODULES = {
+  management: {
+    label: "Gestão geral",
+    instruction: "Analisa indicadores operacionais e ajuda o gestor a priorizar decisões.",
+    suggestions: ["Resume a operação deste mês", "O que precisa de atenção?", "Como está a ocupação?"],
+  },
+  booking_ops: {
+    label: "Gestão de reservas",
+    instruction: "Analisa volume, estados e próximas reservas sem inventar dados.",
+    suggestions: ["Quantas reservas estão pendentes?", "Resume as últimas reservas", "Que reservas exigem ação?"],
+  },
+  finance: {
+    label: "Financeiro",
+    instruction: "Explica faturamento e desempenho comercial apenas com os indicadores fornecidos.",
+    suggestions: ["Qual é o faturamento do mês?", "Qual produto vende mais?", "Resume o desempenho comercial"],
+  },
+  farm_ops: {
+    label: "Operação da fazenda",
+    instruction: "Ajuda o fazendeiro a organizar atividades, áreas e recursos da fazenda.",
+    suggestions: ["Resume a operação da fazenda", "Que atividade acontece primeiro?", "Que área precisa de atenção?"],
+  },
+  catalog_ops: {
+    label: "Experiências",
+    instruction: "Ajuda a gerir agenda, capacidade e conteúdo das experiências cadastradas.",
+    suggestions: ["Lista as próximas experiências", "Qual atividade tem mais vagas?", "Compara capacidades"],
+  },
+  inventory: {
+    label: "Estoque e produtos",
+    instruction: "Analisa produtos, estoque e vendas e sinaliza níveis baixos.",
+    suggestions: ["Quais produtos têm estoque baixo?", "Qual produto vende mais?", "Resume o estoque"],
+  },
+  gis_ops: {
+    label: "Mapa GIS",
+    instruction: "Ajuda a interpretar e organizar áreas, tipos e descrições do mapa da fazenda.",
+    suggestions: ["Lista as áreas GIS", "Que zonas estão mapeadas?", "Resume a área de plantação"],
+  },
   discovery: {
     label: "Descobrir fazendas",
     instruction:
@@ -38,6 +73,27 @@ export const CHAT_MODULES = {
     instruction:
       "Recomenda experiências considerando ritmo, duração, alimentação, natureza, crianças, descanso e conforto. Usa apenas características existentes nas descrições e no mapa.",
     suggestions: ["O que fazer com crianças?", "Quero uma visita tranquila", "Qual experiência é mais curta?"],
+  },
+};
+
+export const CHAT_SCOPES = {
+  tourist: {
+    label: "Assistente do visitante",
+    modules: ["discovery", "general", "map", "sustainability", "offers", "leisure"],
+    instruction:
+      "Responde apenas sobre serviços, produtos, experiências, preços, vagas, localização, pré-reservas e recomendações ao visitante. Não reveles dados internos de gestão, faturamento global, estoque interno ou dados de outros clientes. Se a pergunta for administrativa, explica que deve ser feita na área da equipa.",
+  },
+  manager: {
+    label: "Copiloto de gestão",
+    modules: ["management", "booking_ops", "finance"],
+    instruction:
+      "Responde apenas sobre gestão: indicadores, faturamento, ocupação, reservas, desempenho e prioridades operacionais. Não ages como guia turístico nem ofereces recomendações de lazer. Usa somente o contexto interno autorizado.",
+  },
+  farmer: {
+    label: "Assistente da fazenda",
+    modules: ["farm_ops", "catalog_ops", "inventory", "gis_ops"],
+    instruction:
+      "Responde apenas sobre a operação da fazenda: experiências, agenda, capacidade, produtos, estoque, áreas GIS, cultivo, animais e recursos. Não aproves reservas, não exponhas dados pessoais de visitantes e não forneças indicadores financeiros de gestão.",
   },
 };
 
@@ -81,11 +137,26 @@ function getProviderOrder() {
   return [...new Set([...requested, ...SUPPORTED_PROVIDERS])];
 }
 
-function buildMessages({ catalog, farmAreas, farms, points, history, location, message, module }) {
+function buildMessages({
+  catalog,
+  farmAreas,
+  farms,
+  history,
+  location,
+  managementContext,
+  message,
+  module,
+  points,
+  products,
+  scope,
+}) {
   const selectedModule = CHAT_MODULES[module] || CHAT_MODULES.general;
+  const selectedScope = CHAT_SCOPES[scope] || CHAT_SCOPES.tourist;
   const systemPrompt = [
     "És o assistente oficial da AGRO TUR, uma plataforma de agroturismo em Angola.",
     "Responde sempre em português claro, caloroso e conciso, com no máximo 140 palavras.",
+    `Âmbito obrigatório: ${selectedScope.label}. ${selectedScope.instruction}`,
+    "Se uma pergunta estiver fora do âmbito, não a respondas parcialmente: indica em uma frase qual é o canal correto e oferece ajuda dentro do teu âmbito.",
     "Usa exclusivamente o catálogo fornecido; nunca inventes experiências, preços, datas ou vagas.",
     "Quando houver data ou número de pessoas, compara com availableSeats e sugere no máximo 2 opções compatíveis.",
     "Se não houver vagas suficientes, explica isso e sugere a alternativa mais próxima.",
@@ -110,6 +181,8 @@ function buildMessages({ catalog, farmAreas, farms, points, history, location, m
       role: "user",
       content: [
         `CATÁLOGO ATUAL:\n${JSON.stringify(catalog)}`,
+        `PRODUTOS E ESTOQUE AUTORIZADOS:\n${JSON.stringify(products)}`,
+        `CONTEXTO DE GESTÃO AUTORIZADO:\n${JSON.stringify(managementContext)}`,
         `FAZENDAS RECOMENDADAS:\n${JSON.stringify(farms)}`,
         `LOCALIZAÇÃO CONSENTIDA DO VISITANTE:\n${JSON.stringify(location)}`,
         `ÁREAS GIS DA FAZENDA:\n${JSON.stringify(farmAreas)}`,
