@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "read": [
+      "**/*"
+    ],
+    "write": [
+      "client/src/**/*",
+      "server/src/**/*",
+      "server/prisma/schema.prisma",
+      "**/*.md",
+      "docker-compose.yml",
+      "Dockerfile",
+      "nginx.conf",
+      ".dockerignore",
+      ".env.example"
+    ]
+  },
+  "excludePatterns": [
+    "node_modules/",
+    ".git/",
+    "dist/",
+    "build/",
+    ".next/",
+    "coverage/",
+    ".playwright-cli/",
+    "output/"
+  ],
+  "language": "pt"
+}
