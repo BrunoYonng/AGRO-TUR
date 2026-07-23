@@ -1,0 +1,83 @@
+name: agro-tur
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agrotur}
+      POSTGRES_USER: ${POSTGRES_USER:-agrotur}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrotur_local_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - agro_tur_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3333
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agrotur}:${POSTGRES_PASSWORD:-agrotur_local_password}@db:5432/${POSTGRES_DB:-agrotur}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-altere-esta-chave-antes-de-publicar}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.6-luna}
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-244923000000}
+      SEED_DATABASE: ${SEED_DATABASE:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "3333"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3333/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - agro_tur_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - agro_tur_network
+
+volumes:
+  postgres_data:
+
+networks:
+  agro_tur_network:
+    driver: bridge

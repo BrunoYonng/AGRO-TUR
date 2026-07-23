@@ -1,0 +1,13 @@
+.git
+.gitignore
+.playwright-cli
+.env
+**/.env
+node_modules
+**/node_modules
+dist
+**/dist
+output
+*.log
+.DS_Store
+README.md
