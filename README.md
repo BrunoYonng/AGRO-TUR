@@ -3,6 +3,9 @@
 Plataforma mobile-first para gestão e descoberta de experiências rurais, reservas,
 produtos agrícolas e áreas GIS.
 
+Para configuração completa, onboarding e troubleshooting, consulte
+[COMO_RODAR.md](./COMO_RODAR.md).
+
 ## Executar
 
 1. Copie `.env.example` para `server/.env` e ajuste o PostgreSQL.
