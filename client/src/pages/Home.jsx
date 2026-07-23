@@ -1,14 +1,12 @@
 import { ArrowDown, ArrowRight, CalendarDays, Clock3, MapPinned, Users } from "lucide-react";
-import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { Chatbot } from "../components/Chatbot";
 import { PublicNav } from "../components/PublicNav";
 import { Reveal } from "../components/Reveal";
 import { Button } from "../components/ui/Button";
+import { PublicMap } from "../components/PublicMap";
 import { demoAreas, demoExperiences } from "../lib/demo-data";
 import { money, shortDate } from "../lib/utils";
-
-const PublicMap = lazy(() => import("../components/PublicMap").then((module) => ({ default: module.PublicMap })));
 
 export function Home() {
   console.log("✓ Home renderizado com", demoExperiences.length, "experiências demo");
@@ -113,9 +111,7 @@ export function Home() {
             <Link to="/mapa"><Button variant="outline"><MapPinned className="size-4" /> Abrir mapa completo</Button></Link>
           </Reveal>
           <Reveal className="overflow-hidden rounded-[28px] shadow-soft">
-            <Suspense fallback={<div className="grid h-[420px] place-items-center bg-agro-50 text-sm font-bold text-agro-800">A carregar o mapa…</div>}>
-              <PublicMap areas={areas} compact />
-            </Suspense>
+            <PublicMap areas={areas} compact />
           </Reveal>
         </div>
       </section>
