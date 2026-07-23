@@ -16,8 +16,26 @@ export function Home() {
   const [areas, setAreas] = useState(demoAreas);
 
   useEffect(() => {
-    api("/experiences").then(setExperiences).catch(() => {});
-    api("/areas").then(setAreas).catch(() => {});
+    // Timeout para fetch da API - evita bloqueio indefinido
+    const timeout = setTimeout(() => {
+      console.log("⏱️ API timeout - usando dados demo");
+    }, 5000);
+
+    Promise.race([
+      api("/experiences").then(setExperiences),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000))
+    ]).catch(() => {
+      console.log("📍 Experiences: usando dados demo");
+    });
+
+    Promise.race([
+      api("/areas").then(setAreas),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000))
+    ]).catch(() => {
+      console.log("📍 Areas: usando dados demo");
+    });
+
+    return () => clearTimeout(timeout);
   }, []);
 
   return (
