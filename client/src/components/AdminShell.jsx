@@ -2,16 +2,17 @@ import { CalendarCheck, LayoutDashboard, LogOut, Map, Menu, Package, Sprout, X }
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../lib/utils";
+import { clearSession, roleLabels } from "../lib/auth";
 
 const items = [
-  { label: "Visão geral", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Reservas", href: "/dashboard#reservas", icon: CalendarCheck },
-  { label: "Experiências", href: "/dashboard#experiencias", icon: Sprout },
-  { label: "Produtos", href: "/dashboard#produtos", icon: Package },
-  { label: "Mapa GIS", href: "/mapa?admin=1", icon: Map },
+  { label: "Visão geral", href: "/dashboard", icon: LayoutDashboard, roles: ["MANAGER", "FARMER"] },
+  { label: "Reservas", href: "/dashboard#reservas", icon: CalendarCheck, roles: ["MANAGER", "FARMER"] },
+  { label: "Experiências", href: "/dashboard#experiencias", icon: Sprout, roles: ["MANAGER", "FARMER"] },
+  { label: "Produtos", href: "/dashboard#produtos", icon: Package, roles: ["MANAGER", "FARMER"] },
+  { label: "Mapa GIS", href: "/mapa?admin=1", icon: Map, roles: ["MANAGER", "FARMER"] },
 ];
 
-export function AdminShell({ children, title, subtitle, action }) {
+export function AdminShell({ children, title, subtitle, action, user }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const sidebar = (
@@ -19,7 +20,7 @@ export function AdminShell({ children, title, subtitle, action }) {
       <Link to="/" className="flex items-center gap-2 px-3 text-lg font-black">AGRO <span className="text-sun">TUR</span></Link>
       <p className="px-3 pt-1 text-[10px] font-bold uppercase tracking-[.22em] text-white/40">Gestão da fazenda</p>
       <nav className="mt-10 space-y-1">
-        {items.map((item) => {
+        {items.filter((item) => item.roles.includes(user?.role)).map((item) => {
           const Icon = item.icon;
           const active = item.href === "/dashboard" ? location.pathname === "/dashboard" && !location.hash : `${location.pathname}${location.search}` === item.href;
           return (
@@ -35,8 +36,12 @@ export function AdminShell({ children, title, subtitle, action }) {
         })}
       </nav>
       <div className="mt-auto border-t border-white/10 pt-4">
+        <div className="mb-3 px-3">
+          <p className="truncate text-sm font-bold">{user?.name}</p>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.18em] text-sun">{roleLabels[user?.role] || user?.role}</p>
+        </div>
         <button
-          onClick={() => { localStorage.removeItem("agrotur_token"); window.location.reload(); }}
+          onClick={() => { clearSession(); window.location.reload(); }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white"
         >
           <LogOut className="size-4" /> Terminar sessão

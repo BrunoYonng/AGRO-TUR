@@ -2,12 +2,15 @@ import L from "leaflet";
 import "leaflet-draw";
 import { useEffect, useState } from "react";
 import { GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AdminShell } from "../components/AdminShell";
+import { Chatbot } from "../components/Chatbot";
+import { LoginPanel } from "../components/LoginPanel";
 import { PublicNav } from "../components/PublicNav";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import { canUseDashboard, getStoredUser } from "../lib/auth";
 import { demoAreas, points } from "../lib/demo-data";
 
 const labels = { PLANTATION: "Plantação", ANIMALS: "Animais", LEISURE: "Lazer", SERVICE: "Serviço" };
@@ -17,6 +20,8 @@ const pointIcon = L.divIcon({ className: "map-pin", html: "●" });
 export function FarmMap() {
   const [params] = useSearchParams();
   const admin = params.get("admin") === "1";
+  const focus = params.get("focus");
+  const [adminUser, setAdminUser] = useState(getStoredUser);
   const [areas, setAreas] = useState(demoAreas);
   const [draft, setDraft] = useState(null);
 
@@ -35,10 +40,21 @@ export function FarmMap() {
     setDraft(null);
   }
 
+  const focusedPlace =
+    points.find((point) => point.id === focus) ||
+    areas.find((area) => area.id === focus);
+
   const content = (
     <div className={admin ? "grid gap-5 xl:grid-cols-[1fr_300px]" : ""}>
       <div className="relative overflow-hidden rounded-[24px] bg-white shadow-soft">
-        <MapCanvas areas={areas} editable={admin} onCreated={setDraft} />
+        <MapCanvas areas={areas} editable={admin} focus={focus} onCreated={setDraft} />
+        {!admin && focusedPlace && (
+          <div className="absolute left-4 top-4 z-[1000] max-w-[calc(100%-32px)] rounded-2xl bg-agro-900 px-4 py-3 text-white shadow-xl sm:left-6 sm:top-6">
+            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-sun">Recomendado pelo assistente</p>
+            <p className="mt-1 font-bold">{focusedPlace.name}</p>
+            <p className="mt-1 max-w-sm text-xs text-white/65">{focusedPlace.description}</p>
+          </div>
+        )}
         {!admin && (
           <div className="absolute bottom-4 left-4 right-4 z-[1000] flex flex-wrap gap-2 sm:left-6 sm:right-auto">
             {Object.entries(labels).map(([type, label]) => (
@@ -72,8 +88,22 @@ export function FarmMap() {
   );
 
   if (admin) {
+    if (!localStorage.getItem("agrotur_token") || !adminUser) {
+      return <LoginPanel onLogin={setAdminUser} />;
+    }
+    if (adminUser && !canUseDashboard(adminUser)) {
+      return (
+        <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
+          <div className="max-w-md">
+            <h1 className="font-display text-4xl">Mapa administrativo restrito.</h1>
+            <p className="mt-4 text-sm text-stone-600">Entre como gestor ou fazendeiro para desenhar e guardar áreas GIS.</p>
+            <Link to="/mapa"><Button className="mt-6">Abrir mapa público</Button></Link>
+          </div>
+        </main>
+      );
+    }
     return (
-      <AdminShell title="Mapa GIS" subtitle="Desenhe e organize as áreas da fazenda">
+      <AdminShell user={adminUser} title="Mapa GIS" subtitle="Desenhe e organize as áreas da fazenda">
         {content}
       </AdminShell>
     );
@@ -90,11 +120,12 @@ export function FarmMap() {
         </div>
         <div className="mt-10">{content}</div>
       </section>
+      <Chatbot />
     </main>
   );
 }
 
-function MapCanvas({ areas, editable, onCreated }) {
+function MapCanvas({ areas, editable, focus, onCreated }) {
   return (
     <MapContainer center={[-14.8912, 13.4962]} zoom={15} className="h-[calc(100vh-210px)] min-h-[540px] w-full" scrollWheelZoom>
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -102,7 +133,11 @@ function MapCanvas({ areas, editable, onCreated }) {
         <GeoJSON
           key={area.id}
           data={area.geojson}
-          style={{ color: colors[area.type] || "#4CAF50", fillOpacity: 0.25, weight: 2 }}
+          style={{
+            color: colors[area.type] || "#4CAF50",
+            fillOpacity: area.id === focus ? 0.42 : 0.25,
+            weight: area.id === focus ? 5 : 2,
+          }}
           onEachFeature={(_, layer) => layer.bindPopup(`<strong>${area.name}</strong><br/>${area.description}`)}
         />
       ))}
@@ -111,9 +146,30 @@ function MapCanvas({ areas, editable, onCreated }) {
           <Popup><strong>{point.name}</strong><br />{point.description}</Popup>
         </Marker>
       ))}
+      <MapFocus focus={focus} areas={areas} />
       {editable && <DrawControl onCreated={onCreated} />}
     </MapContainer>
   );
+}
+
+function MapFocus({ focus, areas }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!focus) return;
+    const point = points.find((item) => item.id === focus);
+    if (point) {
+      map.flyTo(point.position, 18, { duration: 1.1 });
+      return;
+    }
+    const area = areas.find((item) => item.id === focus);
+    if (area) {
+      const bounds = L.geoJSON(area.geojson).getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [70, 70], maxZoom: 17 });
+    }
+  }, [areas, focus, map]);
+
+  return null;
 }
 
 function DrawControl({ onCreated }) {

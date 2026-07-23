@@ -36,7 +36,7 @@ export function Home() {
               Dias feitos de natureza, sabores da fazenda e encontros que ficam na memória.
             </p>
             <div className="mt-8 flex animate-rise flex-wrap gap-3 [animation-delay:300ms]">
-              <a href="#experiencias"><Button variant="yellow">Explorar experiências <ArrowRight className="size-4" /></Button></a>
+              <Link to="/fazendas"><Button variant="yellow">Descobrir fazendas <ArrowRight className="size-4" /></Button></Link>
               <Link to="/mapa"><Button variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20">Ver mapa da fazenda</Button></Link>
             </div>
           </div>

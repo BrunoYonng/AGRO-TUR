@@ -31,10 +31,10 @@ export const demoExperiences = [
 ];
 
 export const points = [
-  { name: "Curral", description: "Conheça os cavalos e a rotina dos animais.", position: [-14.8902, 13.4992], type: "Animais" },
-  { name: "Horta", description: "Hortaliças, ervas aromáticas e colheita guiada.", position: [-14.8896, 13.4943], type: "Plantação" },
-  { name: "Lago", description: "Percurso tranquilo, observação de aves e piqueniques.", position: [-14.8941, 13.4938], type: "Lazer" },
-  { name: "Restaurante", description: "Sabores da fazenda servidos à mesa.", position: [-14.891, 13.4972], type: "Serviço" },
+  { id: "curral", name: "Curral", description: "Conheça os cavalos e a rotina dos animais.", position: [-14.8902, 13.4992], type: "Animais" },
+  { id: "horta", name: "Horta", description: "Hortaliças, ervas aromáticas e colheita guiada.", position: [-14.8896, 13.4943], type: "Plantação" },
+  { id: "lago", name: "Lago", description: "Percurso tranquilo, observação de aves e piqueniques.", position: [-14.8941, 13.4938], type: "Lazer" },
+  { id: "restaurante", name: "Restaurante", description: "Sabores da fazenda servidos à mesa.", position: [-14.891, 13.4972], type: "Serviço" },
 ];
 
 export const demoAreas = [

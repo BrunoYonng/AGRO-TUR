@@ -9,6 +9,7 @@ import { productsRouter } from "./routes/products.js";
 import { areasRouter } from "./routes/areas.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { chatbotRouter } from "./routes/chatbot.js";
+import { farmsRouter } from "./routes/farms.js";
 
 if (!process.env.JWT_SECRET) {
   console.error("JWT_SECRET não definido. Copie .env.example para server/.env.");
@@ -28,6 +29,7 @@ app.use("/api/products", productsRouter);
 app.use("/api/areas", areasRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/chatbot", chatbotRouter);
+app.use("/api/farms", farmsRouter);
 
 app.use((error, _req, res, _next) => {
   if (error instanceof ZodError) {

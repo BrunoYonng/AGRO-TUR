@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const productsRouter = Router();
 productsRouter.use(requireAuth);
+productsRouter.use(allowRoles("MANAGER", "FARMER"));
 
 const schema = z.object({
   name: z.string().min(2),

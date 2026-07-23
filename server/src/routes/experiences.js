@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const experiencesRouter = Router();
 
@@ -30,7 +30,7 @@ experiencesRouter.get("/", async (_req, res, next) => {
   }
 });
 
-experiencesRouter.post("/", requireAuth, async (req, res, next) => {
+experiencesRouter.post("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     res.status(201).json(await prisma.experience.create({ data: schema.parse(req.body) }));
   } catch (error) {
@@ -38,7 +38,7 @@ experiencesRouter.post("/", requireAuth, async (req, res, next) => {
   }
 });
 
-experiencesRouter.put("/:id", requireAuth, async (req, res, next) => {
+experiencesRouter.put("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     res.json(
       await prisma.experience.update({
@@ -51,7 +51,7 @@ experiencesRouter.put("/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-experiencesRouter.delete("/:id", requireAuth, async (req, res, next) => {
+experiencesRouter.delete("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     await prisma.experience.update({ where: { id: req.params.id }, data: { active: false } });
     res.status(204).end();

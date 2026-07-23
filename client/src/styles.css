@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.farm-map-pin {
+  display: grid;
+  height: 34px !important;
+  width: 34px !important;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 9999px;
+  background: #173f2a;
+  color: #ffc107;
+  box-shadow: 0 8px 24px rgb(23 63 42 / 35%);
+  font-size: 18px;
+}
+
 @layer base {
   * { @apply border-black/10; }
   html { scroll-behavior: smooth; }

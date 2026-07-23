@@ -8,6 +8,8 @@ import { Home } from "./pages/Home";
 
 const Dashboard = lazy(() => import("./pages/Dashboard").then((module) => ({ default: module.Dashboard })));
 const FarmMap = lazy(() => import("./pages/FarmMap").then((module) => ({ default: module.FarmMap })));
+const Farms = lazy(() => import("./pages/Farms").then((module) => ({ default: module.Farms })));
+const TouristAccount = lazy(() => import("./pages/TouristAccount").then((module) => ({ default: module.TouristAccount })));
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -82,6 +84,8 @@ if (!rootElement) {
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/mapa" element={<FarmMap />} />
+              <Route path="/fazendas" element={<Farms />} />
+              <Route path="/conta" element={<TouristAccount />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

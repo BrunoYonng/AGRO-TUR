@@ -22,11 +22,34 @@ npm run dev
 Frontend: `http://localhost:5173`  
 API: `http://localhost:3333/api`
 
-Utilizador inicial do seed: `admin@agrotur.ao` / `AgroTur@2026`.
+Perfis de demonstração criados pelo seed:
 
-Sem `OPENAI_API_KEY`, o chatbot continua operacional com respostas locais baseadas
+| Perfil | Email | Palavra-passe |
+| --- | --- | --- |
+| Gestor | `gestor@agrotur.ao` | `Gestor@2026` |
+| Fazendeiro | `fazendeiro@agrotur.ao` | `Fazenda@2026` |
+| Visitante | `visitante@agrotur.ao` | `Visitante@2026` |
+
+O gestor controla reservas e a operação global. O fazendeiro mantém experiências,
+produtos e áreas GIS. Novos registos feitos por `/api/auth/register` recebem
+sempre o perfil seguro `TOURIST`.
+
+A área do visitante está disponível em `/conta` e inclui criação de conta, perfil,
+reservas associadas ao email, próxima visita e recomendações de fazendas.
+
+O chatbot suporta Gemini, Groq e OpenAI, com fallback automático entre providers.
+Sem nenhuma chave configurada, continua operacional com respostas locais baseadas
 nas experiências cadastradas. O mapa público também inclui dados de demonstração
 quando a API ainda não estiver ligada.
+
+No frontend, o assistente funciona como motor de recomendação e possui módulos de
+descoberta, mapa e território, ecologia e sustentabilidade, preços e ofertas, e
+lazer e conforto. Recomendações geográficas podem abrir diretamente o ponto,
+polígono ou fazenda correspondente no mapa.
+
+O catálogo `/fazendas` compara lugares por proximidade, preço, sustentabilidade e
+conforto. A localização do visitante é opcional e só é solicitada após uma ação
+explícita no navegador.
 
 ## Executar com Docker
 

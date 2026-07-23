@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const dashboardRouter = Router();
 dashboardRouter.use(requireAuth);
+dashboardRouter.use(allowRoles("MANAGER", "FARMER"));
 
 dashboardRouter.get("/summary", async (_req, res, next) => {
   try {

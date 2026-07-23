@@ -1,11 +1,13 @@
-import { ArrowDownRight, ArrowUpRight, Banknote, BedDouble, CalendarCheck, Check, ChevronRight, Package, Plus, X } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Banknote, BedDouble, CalendarCheck, Check, ChevronRight, Package, Plus, ShieldX, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AdminShell } from "../components/AdminShell";
 import { LoginPanel } from "../components/LoginPanel";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
+import { canUseDashboard, clearSession, getStoredUser, roleLabels } from "../lib/auth";
 import { demoBookings, demoExperiences } from "../lib/demo-data";
 import { money, shortDate } from "../lib/utils";
 
@@ -22,6 +24,7 @@ const statusMap = {
 
 export function Dashboard() {
   const [authenticated, setAuthenticated] = useState(Boolean(localStorage.getItem("agrotur_token")));
+  const [user, setUser] = useState(getStoredUser);
   const [bookings, setBookings] = useState(demoBookings);
   const [experiences, setExperiences] = useState(demoExperiences);
   const [weekly, setWeekly] = useState(weeklyDemo);
@@ -35,6 +38,13 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!authenticated) return;
+    api("/auth/me")
+      .then(({ user: currentUser }) => setUser(currentUser))
+      .catch(() => {
+        clearSession();
+        setAuthenticated(false);
+        setUser(null);
+      });
     Promise.allSettled([
       api("/bookings?limit=10").then(setBookings),
       api("/experiences").then(setExperiences),
@@ -45,11 +55,13 @@ export function Dashboard() {
   }, [authenticated]);
 
   async function updateStatus(id, status) {
+    if (user?.role !== "MANAGER") return;
+    const previous = bookings;
     setBookings((items) => items.map((item) => item.id === id ? { ...item, status } : item));
     try {
       await api(`/bookings/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
     } catch {
-      // A atualização otimista mantém a demonstração utilizável offline.
+      setBookings(previous);
     }
   }
 
@@ -60,13 +72,29 @@ export function Dashboard() {
     { label: "Produto mais vendido", value: summary.topProduct, detail: "86 unidades no mês", trend: "up", icon: Package },
   ], [summary]);
 
-  if (!authenticated) return <LoginPanel onLogin={() => setAuthenticated(true)} />;
+  if (!authenticated) return <LoginPanel onLogin={(loggedUser) => { setUser(loggedUser); setAuthenticated(true); }} />;
+  if (user && !canUseDashboard(user)) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-cream px-5">
+        <div className="max-w-md text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-full bg-sun/25 text-agro-900"><ShieldX /></span>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[.2em] text-agro-600">{roleLabels[user.role]}</p>
+          <h1 className="mt-3 font-display text-4xl">Esta área é da equipa da fazenda.</h1>
+          <p className="mt-4 text-sm leading-relaxed text-stone-600">A sua conta de visitante continua válida para explorar fazendas e preparar reservas.</p>
+          <Link to="/"><Button className="mt-7">Voltar às experiências</Button></Link>
+        </div>
+      </main>
+    );
+  }
+  const canApproveBookings = user?.role === "MANAGER";
+  const canManageCatalog = ["MANAGER", "FARMER"].includes(user?.role);
 
   return (
     <AdminShell
+      user={user}
       title="Visão geral"
-      subtitle={`Operação de ${new Intl.DateTimeFormat("pt-AO", { month: "long", year: "numeric" }).format(new Date())}`}
-      action={<Button size="sm" onClick={() => setModal("experience")}><Plus className="size-4" /> <span className="hidden sm:inline">Nova experiência</span></Button>}
+      subtitle={`${roleLabels[user?.role] || "Equipa"} · operação de ${new Intl.DateTimeFormat("pt-AO", { month: "long", year: "numeric" }).format(new Date())}`}
+      action={canManageCatalog ? <Button size="sm" onClick={() => setModal("experience")}><Plus className="size-4" /> <span className="hidden sm:inline">Nova experiência</span></Button> : null}
     >
       <section className="grid gap-px overflow-hidden rounded-2xl border bg-black/10 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => {
@@ -143,12 +171,12 @@ export function Dashboard() {
                     <td className="font-semibold">{money.format(Number(booking.totalAmount))}</td>
                     <td><Badge tone={tone}>{label}</Badge></td>
                     <td className="pr-6 text-right">
-                      {booking.status === "PENDING" ? (
+                      {booking.status === "PENDING" && canApproveBookings ? (
                         <div className="flex justify-end gap-1">
                           <button title="Aprovar" onClick={() => updateStatus(booking.id, "APPROVED")} className="rounded-lg p-2 text-agro-600 hover:bg-agro-50"><Check className="size-4" /></button>
                           <button title="Cancelar" onClick={() => updateStatus(booking.id, "CANCELLED")} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><X className="size-4" /></button>
                         </div>
-                      ) : <button className="text-xs font-bold text-stone-500">Detalhes</button>}
+                      ) : <button className="text-xs font-bold text-stone-500">{booking.status === "PENDING" ? "Só o gestor aprova" : "Detalhes"}</button>}
                     </td>
                   </tr>
                 );
@@ -163,7 +191,7 @@ export function Dashboard() {
           title="Experiências"
           description="Atividades publicadas no catálogo"
           items={experiences}
-          onAdd={() => setModal("experience")}
+          onAdd={canManageCatalog ? () => setModal("experience") : null}
           render={(item) => (
             <><div><p className="font-bold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{shortDate.format(new Date(item.date))} · {item.capacity} vagas</p></div><p className="font-bold">{money.format(Number(item.price))}</p></>
           )}
@@ -173,7 +201,7 @@ export function Dashboard() {
             title="Estoque da loja"
             description="Produtos agrícolas disponíveis"
             items={products}
-            onAdd={() => setModal("product")}
+            onAdd={canManageCatalog ? () => setModal("product") : null}
             render={(item) => (
               <><div><p className="font-bold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{item.sku} · {money.format(Number(item.price))}</p></div><Badge tone={item.stock < 10 ? "red" : "green"}>{item.stock} {item.unit}</Badge></>
             )}
@@ -195,7 +223,7 @@ function ManagementList({ title, description, items, onAdd, render }) {
     <article className="overflow-hidden rounded-2xl bg-white">
       <div className="flex items-center justify-between border-b px-5 py-5">
         <div><h2 className="font-bold">{title}</h2><p className="mt-1 text-xs text-stone-500">{description}</p></div>
-        <Button variant="outline" size="sm" onClick={onAdd}><Plus className="size-4" /> Adicionar</Button>
+        {onAdd && <Button variant="outline" size="sm" onClick={onAdd}><Plus className="size-4" /> Adicionar</Button>}
       </div>
       <div className="divide-y">
         {items.slice(0, 4).map((item) => <div key={item.id} className="flex items-center justify-between gap-4 px-5 py-4 text-sm">{render(item)}</div>)}

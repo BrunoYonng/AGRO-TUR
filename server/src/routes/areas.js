@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const areasRouter = Router();
 
@@ -21,7 +21,7 @@ areasRouter.get("/", async (_req, res, next) => {
   }
 });
 
-areasRouter.post("/", requireAuth, async (req, res, next) => {
+areasRouter.post("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     res.status(201).json(await prisma.farmArea.create({ data: schema.parse(req.body) }));
   } catch (error) {
@@ -29,7 +29,7 @@ areasRouter.post("/", requireAuth, async (req, res, next) => {
   }
 });
 
-areasRouter.put("/:id", requireAuth, async (req, res, next) => {
+areasRouter.put("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     res.json(
       await prisma.farmArea.update({
@@ -42,7 +42,7 @@ areasRouter.put("/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-areasRouter.delete("/:id", requireAuth, async (req, res, next) => {
+areasRouter.delete("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     await prisma.farmArea.delete({ where: { id: req.params.id } });
     res.status(204).end();

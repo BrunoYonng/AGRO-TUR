@@ -55,7 +55,13 @@ Variáveis importantes:
 | `DATABASE_URL` | Ligação PostgreSQL usada pelo Prisma na execução local |
 | `JWT_SECRET` | Chave usada para assinar tokens de autenticação |
 | `CLIENT_URL` | Origem autorizada pelo CORS |
-| `OPENAI_API_KEY` | Opcional; ativa as respostas OpenAI no chatbot |
+| `GOOGLE_API_KEY` | Chave do Google AI Studio para o Gemini |
+| `GOOGLE_MODEL` | Modelo Gemini usado pelo chatbot |
+| `GROQ_API_KEY` | Chave da Groq |
+| `GROQ_MODEL` | Modelo Groq usado pelo chatbot |
+| `AI_PROVIDER_ORDER` | Prioridade dos providers, separados por vírgula |
+| `AI_TIMEOUT_MS` | Timeout de cada tentativa de provider |
+| `OPENAI_API_KEY` | Opcional; ativa OpenAI como provider adicional |
 | `OPENAI_MODEL` | Modelo usado pelo chatbot |
 | `WHATSAPP_NUMBER` | Número associado às pré-reservas |
 | `APP_PORT` | Porta pública do frontend em Docker |
@@ -95,8 +101,9 @@ JWT_SECRET="uma-chave-longa-e-aleatoria"
 POSTGRES_PASSWORD="uma-palavra-passe-segura"
 ```
 
-`OPENAI_API_KEY` pode ficar vazio. Nesse caso, o chatbot utiliza o mecanismo
-local baseado nas experiências cadastradas.
+Configure uma ou mais chaves de IA. Por padrão, o chatbot tenta Gemini, depois
+Groq, depois OpenAI. Se todos estiverem ausentes ou indisponíveis, utiliza o
+mecanismo local baseado nas experiências cadastradas.
 
 ### 4.2 Construir e iniciar
 
@@ -117,15 +124,30 @@ Os serviços devem aparecer como `healthy`.
 | Serviço | Endereço |
 | --- | --- |
 | Aplicação | http://localhost:8080 |
+| Catálogo de fazendas | http://localhost:8080/fazendas |
+| Conta do visitante | http://localhost:8080/conta |
 | Healthcheck da API | http://localhost:8080/api/health |
 | Login administrativo | http://localhost:8080/dashboard |
 
 Credenciais iniciais criadas pelo seed:
 
-```text
-Email: admin@agrotur.ao
-Palavra-passe: AgroTur@2026
-```
+| Perfil | Email | Palavra-passe |
+| --- | --- | --- |
+| Gestor | `gestor@agrotur.ao` | `Gestor@2026` |
+| Fazendeiro | `fazendeiro@agrotur.ao` | `Fazenda@2026` |
+| Visitante | `visitante@agrotur.ao` | `Visitante@2026` |
+
+Permissões:
+
+- `MANAGER`: indicadores, reservas, aprovação/cancelamento e gestão global;
+- `FARMER`: operação da fazenda, experiências, produtos, estoque e mapa GIS;
+- `TOURIST`: módulo público. O endpoint de registo nunca permite escolher um
+  perfil administrativo.
+
+Na área `/conta`, o visitante pode criar uma conta, entrar, consultar as reservas
+associadas ao seu email e receber novas recomendações. A API usa
+`GET /api/bookings/mine` para devolver apenas as reservas do utilizador
+autenticado.
 
 Altere estas credenciais antes de disponibilizar o sistema publicamente.
 
@@ -199,6 +221,12 @@ PORT=3333
 CLIENT_URL="http://localhost:5173"
 OPENAI_API_KEY=""
 OPENAI_MODEL="gpt-5.6-luna"
+GOOGLE_API_KEY=""
+GOOGLE_MODEL="gemini-2.5-flash"
+GROQ_API_KEY=""
+GROQ_MODEL="llama-3.3-70b-versatile"
+AI_PROVIDER_ORDER="gemini,groq,openai"
+AI_TIMEOUT_MS=12000
 WHATSAPP_NUMBER="244923000000"
 ```
 
@@ -306,6 +334,37 @@ curl http://localhost:8080/api/experiences
 
 Após o seed, a resposta deve conter três experiências.
 
+### Validar os módulos do chatbot
+
+```bash
+curl -X POST http://localhost:8080/api/chatbot \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Mostra a horta no mapa","module":"map","sessionId":"teste-mapa"}'
+```
+
+Módulos aceites:
+
+- `discovery`: recomenda fazendas por localização e preferências;
+- `general`: escolha geral da visita;
+- `map`: território, áreas GIS e pontos de interesse;
+- `sustainability`: ecologia, solo, água e biodiversidade;
+- `offers`: comparação de preços, vagas e melhor valor;
+- `leisure`: lazer, duração, alimentação e conforto.
+
+A resposta do módulo `map` pode incluir `mapTargets` com links que posicionam o
+mapa público na área recomendada.
+
+### Validar recomendação e geolocalização
+
+```bash
+curl "http://localhost:8080/api/farms?lat=-14.91&lng=13.50&preference=nearby"
+```
+
+Os critérios aceites são `nearby`, `price`, `sustainability` e `comfort`. Na
+interface, abra `/fazendas` e clique em **Usar a minha localização**. O navegador
+pedirá consentimento; se for recusado, o catálogo continua disponível sem cálculo
+de distância. Em produção, a geolocalização do navegador requer HTTPS.
+
 ## 8. Migrações Prisma
 
 Ao alterar `server/prisma/schema.prisma`:
@@ -383,7 +442,14 @@ Esse procedimento apaga os dados locais.
 
 ### Chatbot responde em modo local
 
-Confirme se `OPENAI_API_KEY` está definida no `.env` e recrie o backend:
+Consulte os providers reconhecidos, sem exposição das chaves:
+
+```bash
+curl http://localhost:8080/api/chatbot/providers
+```
+
+Confirme se pelo menos uma das variáveis `GOOGLE_API_KEY`, `GROQ_API_KEY` ou
+`OPENAI_API_KEY` está definida no `.env` e recrie o backend:
 
 ```bash
 docker compose up -d --force-recreate backend

@@ -7,17 +7,39 @@ const prisma = new PrismaClient();
 const center = [-14.8912, 13.4962];
 
 async function main() {
-  const passwordHash = await bcrypt.hash("AgroTur@2026", 12);
-  await prisma.user.upsert({
-    where: { email: "admin@agrotur.ao" },
-    update: {},
-    create: {
-      name: "Administrador AGRO TUR",
-      email: "admin@agrotur.ao",
-      passwordHash,
-      role: "ADMIN",
+  const users = [
+    {
+      name: "Gestor AGRO TUR",
+      email: "gestor@agrotur.ao",
+      password: "Gestor@2026",
+      role: "MANAGER",
     },
-  });
+    {
+      name: "Fazendeiro AGRO TUR",
+      email: "fazendeiro@agrotur.ao",
+      password: "Fazenda@2026",
+      role: "FARMER",
+    },
+    {
+      name: "Visitante AGRO TUR",
+      email: "visitante@agrotur.ao",
+      password: "Visitante@2026",
+      role: "TOURIST",
+    },
+  ];
+  for (const user of users) {
+    const passwordHash = await bcrypt.hash(user.password, 12);
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { name: user.name, passwordHash, role: user.role },
+      create: {
+        name: user.name,
+        email: user.email,
+        passwordHash,
+        role: user.role,
+      },
+    });
+  }
 
   const experiences = [
     {
@@ -125,6 +147,22 @@ async function main() {
           status: index === 4 ? "PENDING" : "APPROVED",
           experienceId: experience.id,
         },
+      });
+    }
+  }
+
+  const visitorHasBooking = await prisma.booking.count({
+    where: { guestEmail: "visitante@agrotur.ao" },
+  });
+  if (!visitorHasBooking) {
+    const demoBooking = await prisma.booking.findFirst({
+      where: { guestEmail: { endsWith: "@example.com" } },
+      orderBy: { createdAt: "asc" },
+    });
+    if (demoBooking) {
+      await prisma.booking.update({
+        where: { id: demoBooking.id },
+        data: { guestEmail: "visitante@agrotur.ao" },
       });
     }
   }

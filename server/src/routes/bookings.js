@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const bookingsRouter = Router();
 
@@ -32,7 +32,27 @@ bookingsRouter.post("/", async (req, res, next) => {
   }
 });
 
-bookingsRouter.get("/", requireAuth, async (req, res, next) => {
+bookingsRouter.get("/mine", requireAuth, async (req, res, next) => {
+  try {
+    res.json(
+      await prisma.booking.findMany({
+        where: {
+          guestEmail: { equals: req.user.email, mode: "insensitive" },
+        },
+        orderBy: { visitDate: "desc" },
+        include: {
+          experience: {
+            select: { id: true, name: true, description: true, duration: true },
+          },
+        },
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+bookingsRouter.get("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 100);
     res.json(
@@ -47,7 +67,7 @@ bookingsRouter.get("/", requireAuth, async (req, res, next) => {
   }
 });
 
-bookingsRouter.patch("/:id/status", requireAuth, async (req, res, next) => {
+bookingsRouter.patch("/:id/status", requireAuth, allowRoles("MANAGER"), async (req, res, next) => {
   try {
     const { status } = z
       .object({ status: z.enum(["PENDING", "APPROVED", "CANCELLED"]) })

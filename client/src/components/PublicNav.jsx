@@ -3,13 +3,17 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Brand } from "./Brand";
 import { Button } from "./ui/Button";
+import { getStoredUser } from "../lib/auth";
 
 export function PublicNav({ overlay = false }) {
   const [open, setOpen] = useState(false);
+  const user = getStoredUser();
+  const accountHref = ["MANAGER", "FARMER"].includes(user?.role) ? "/dashboard" : "/conta";
+  const accountLabel = ["MANAGER", "FARMER"].includes(user?.role) ? "Gestão" : user ? "Minha conta" : "Entrar";
   const links = [
+    ["Fazendas", "/fazendas"],
     ["Experiências", "/#experiencias"],
     ["Mapa", "/mapa"],
-    ["A fazenda", "/#fazenda"],
   ];
   return (
     <header className={overlay ? "absolute inset-x-0 top-0 z-[1000] text-white" : "relative z-[1000] border-b border-black/5 bg-white"}>
@@ -21,7 +25,7 @@ export function PublicNav({ overlay = false }) {
               {label}
             </NavLink>
           ))}
-          <Link to="/dashboard"><Button variant={overlay ? "yellow" : "primary"} size="sm">Área da fazenda</Button></Link>
+          <Link to={accountHref}><Button variant={overlay ? "yellow" : "primary"} size="sm">{accountLabel}</Button></Link>
         </nav>
         <button aria-label="Abrir menu" className="grid size-11 place-items-center md:hidden" onClick={() => setOpen(!open)}>
           {open ? <X /> : <Menu />}
@@ -32,7 +36,8 @@ export function PublicNav({ overlay = false }) {
           {links.map(([label, href]) => (
             <Link key={label} to={href} onClick={() => setOpen(false)} className="block border-b border-black/5 py-3 font-semibold">{label}</Link>
           ))}
-          <Link to="/dashboard" className="mt-4 block"><Button className="w-full">Área da fazenda</Button></Link>
+          <Link to={accountHref} className="mt-4 block"><Button className="w-full">{accountLabel}</Button></Link>
+          <Link to="/dashboard" onClick={() => setOpen(false)} className="mt-3 block text-center text-xs font-bold text-stone-500">Acesso da equipa</Link>
         </div>
       )}
     </header>
