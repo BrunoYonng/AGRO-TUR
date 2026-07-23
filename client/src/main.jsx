@@ -20,22 +20,35 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("React Error:", error, errorInfo);
+    console.error("React Error:", error);
+    console.error("Error Info:", errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="grid min-h-screen place-items-center bg-cream px-5 text-center">
+        <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", backgroundColor: "#f5f3f0", padding: "20px", textAlign: "center", fontFamily: "system-ui" }}>
           <div>
-            <h1 className="text-2xl font-bold text-agro-900">Algo correu mal</h1>
-            <p className="mt-2 text-sm text-stone-600">{this.state.error?.message}</p>
+            <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#173f2a", marginBottom: "10px" }}>Algo correu mal</h1>
+            <p style={{ fontSize: "14px", color: "#78716c", marginBottom: "20px" }}>{this.state.error?.message || "Erro desconhecido"}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-6 inline-block rounded-full bg-agro-600 px-6 py-2 text-sm font-bold text-white hover:bg-agro-700"
+              style={{
+                padding: "10px 24px",
+                backgroundColor: "#527d52",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "bold",
+                border: "none",
+                borderRadius: "9999px",
+                cursor: "pointer",
+              }}
             >
               Recarregar página
             </button>
+            <pre style={{ marginTop: "20px", textAlign: "left", overflow: "auto", maxWidth: "100%", fontSize: "11px" }}>
+              {this.state.error?.stack}
+            </pre>
           </div>
         </div>
       );
@@ -45,18 +58,34 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <BrowserRouter>
-        <Suspense fallback={<div className="grid min-h-screen place-items-center bg-cream text-sm font-bold text-agro-800">A preparar a fazenda…</div>}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/mapa" element={<FarmMap />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </ErrorBoundary>
-  </React.StrictMode>,
-);
+console.log("🚀 AGRO TUR iniciando...");
+
+window.addEventListener("error", (event) => {
+  console.error("❌ Erro global:", event.error);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("❌ Promise rejeitada não tratada:", event.reason);
+});
+
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  document.body.innerHTML = '<div style="padding:20px; font-family: system-ui;">Erro: Elemento root não encontrado</div>';
+} else {
+  console.log("✓ Elemento root encontrado");
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <Suspense fallback={<div className="grid min-h-screen place-items-center bg-cream text-sm font-bold text-agro-800">A preparar a fazenda…</div>}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/mapa" element={<FarmMap />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  );
+}
