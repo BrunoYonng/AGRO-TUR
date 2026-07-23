@@ -1,0 +1,90 @@
+- main [ref=f1e3]:
+  - generic [ref=f1e4]:
+    - img "Fazenda entre montanhas e campos verdes ao amanhecer" [ref=f1e5]
+    - generic [ref=f1e9]:
+      - link "AGRO TUR" [ref=f1e10] [cursor=pointer]:
+        - /url: /
+      - button "Abrir menu" [ref=f1e17] [cursor=pointer]
+    - generic [ref=f1e20]:
+      - paragraph [ref=f1e21]: Agroturismo em Angola
+      - heading "A terra tem histórias para viver." [level=1] [ref=f1e22]
+      - paragraph [ref=f1e23]: Dias feitos de natureza, sabores da fazenda e encontros que ficam na memória.
+      - generic [ref=f1e24]:
+        - link [ref=f1e25] [cursor=pointer]:
+          - /url: "#experiencias"
+          - button "Explorar experiências" [ref=f1e26]
+        - link [ref=f1e29] [cursor=pointer]:
+          - /url: /mapa
+          - button "Ver mapa da fazenda" [ref=f1e30]
+  - generic [ref=f1e32]:
+    - generic [ref=f1e33]:
+      - generic [ref=f1e34]:
+        - paragraph [ref=f1e35]: Próximas datas
+        - heading "Escolha como quer sentir a fazenda." [level=2] [ref=f1e36]
+      - paragraph [ref=f1e37]: Grupos pequenos, anfitriões locais e atividades preparadas ao ritmo da natureza.
+    - generic [ref=f1e38]:
+      - article [ref=f1e40]:
+        - generic [ref=f1e41]: "01"
+        - generic [ref=f1e42]:
+          - generic [ref=f1e43]:
+            - generic [ref=f1e44]: 27/07
+            - generic [ref=f1e47]: 3h30
+            - generic [ref=f1e51]: 16 vagas
+          - heading "Rota do Café" [level=3] [ref=f1e57]
+          - paragraph [ref=f1e58]: "Da colheita à chávena: visita guiada, torra artesanal e degustação."
+        - generic [ref=f1e59]:
+          - paragraph [ref=f1e60]: 18 500 Kz
+          - button "Reservar" [ref=f1e61] [cursor=pointer]
+      - article [ref=f1e65]:
+        - generic [ref=f1e66]: "02"
+        - generic [ref=f1e67]:
+          - generic [ref=f1e68]:
+            - generic [ref=f1e69]: 31/07
+            - generic [ref=f1e72]: 4h
+            - generic [ref=f1e76]: 12 vagas
+          - heading "Mesa na Horta" [level=3] [ref=f1e82]
+          - paragraph [ref=f1e83]: Colha ingredientes com o chef e desfrute de um almoço junto à plantação.
+        - generic [ref=f1e84]:
+          - paragraph [ref=f1e85]: 24 000 Kz
+          - button "Reservar" [ref=f1e86] [cursor=pointer]
+      - article [ref=f1e90]:
+        - generic [ref=f1e91]: "03"
+        - generic [ref=f1e92]:
+          - generic [ref=f1e93]:
+            - generic [ref=f1e94]: 03/08
+            - generic [ref=f1e97]: 2h30
+            - generic [ref=f1e101]: 10 vagas
+          - heading "Amanhecer no Curral" [level=3] [ref=f1e107]
+          - paragraph [ref=f1e108]: Rotina com os animais, pequeno-almoço rural e passeio a cavalo.
+        - generic [ref=f1e109]:
+          - paragraph [ref=f1e110]: 15 000 Kz
+          - button "Reservar" [ref=f1e111] [cursor=pointer]
+  - generic [ref=f1e118]:
+    - paragraph [ref=f1e119]: Do campo à mesa
+    - heading "Mais perto da origem, tudo sabe melhor." [level=2] [ref=f1e120]
+    - paragraph [ref=f1e121]: Conheça quem cultiva, participe da colheita e termine o dia à mesa com ingredientes que percorreram poucos metros.
+    - generic [ref=f1e122]:
+      - generic [ref=f1e123]:
+        - strong [ref=f1e124]: "4"
+        - text: áreas visitáveis
+      - generic [ref=f1e125]:
+        - strong [ref=f1e126]: "12"
+        - text: produtos locais
+      - generic [ref=f1e127]:
+        - strong [ref=f1e128]: 100%
+        - text: feito aqui
+  - generic [ref=f1e130]:
+    - generic [ref=f1e131]:
+      - generic [ref=f1e132]:
+        - paragraph [ref=f1e133]: Explore antes de chegar
+        - heading "Um mapa vivo da fazenda." [level=2] [ref=f1e134]
+      - link [ref=f1e135] [cursor=pointer]:
+        - /url: /mapa
+        - button "Abrir mapa completo" [ref=f1e136]
+    - generic [ref=f1e141]: A carregar o mapa…
+  - generic [ref=f1e144]:
+    - generic [ref=f1e145]:
+      - paragraph [ref=f1e146]: AGRO TUR
+      - paragraph [ref=f1e147]: Aproximamos pessoas da terra, dos sabores e de quem os produz.
+    - paragraph [ref=f1e148]: © 2026 AGRO TUR · Feito em Angola
+  - button "Abrir assistente" [ref=f1e150] [cursor=pointer]
