@@ -1,42 +1,20 @@
 import { ArrowDown, ArrowRight, CalendarDays, Clock3, MapPinned, Users } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { Chatbot } from "../components/Chatbot";
 import { PublicNav } from "../components/PublicNav";
 import { Reveal } from "../components/Reveal";
 import { Button } from "../components/ui/Button";
-import { api } from "../lib/api";
 import { demoAreas, demoExperiences } from "../lib/demo-data";
 import { money, shortDate } from "../lib/utils";
 
 const PublicMap = lazy(() => import("../components/PublicMap").then((module) => ({ default: module.PublicMap })));
 
 export function Home() {
-  const [experiences, setExperiences] = useState(demoExperiences);
-  const [areas, setAreas] = useState(demoAreas);
+  console.log("✓ Home renderizado com", demoExperiences.length, "experiências demo");
 
-  useEffect(() => {
-    // Timeout para fetch da API - evita bloqueio indefinido
-    const timeout = setTimeout(() => {
-      console.log("⏱️ API timeout - usando dados demo");
-    }, 5000);
-
-    Promise.race([
-      api("/experiences").then(setExperiences),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000))
-    ]).catch(() => {
-      console.log("📍 Experiences: usando dados demo");
-    });
-
-    Promise.race([
-      api("/areas").then(setAreas),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000))
-    ]).catch(() => {
-      console.log("📍 Areas: usando dados demo");
-    });
-
-    return () => clearTimeout(timeout);
-  }, []);
+  const experiences = demoExperiences;
+  const areas = demoAreas;
 
   return (
     <main className="overflow-hidden">
