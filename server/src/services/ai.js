@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 
 const SUPPORTED_PROVIDERS = ["gemini", "groq", "openai"];
+const disabledProviders = new Set();
 
 export const CHAT_MODULES = {
   management: {
@@ -152,19 +153,28 @@ function buildMessages({
 }) {
   const selectedModule = CHAT_MODULES[module] || CHAT_MODULES.general;
   const selectedScope = CHAT_SCOPES[scope] || CHAT_SCOPES.tourist;
+  const scopeRules =
+    scope === "tourist"
+      ? [
+          "Quando houver data ou número de pessoas, compara com availableSeats e sugere no máximo 2 opções compatíveis.",
+          "Se não houver vagas suficientes, explica isso e sugere a alternativa mais próxima.",
+          "Nunca confirmes uma reserva. Chama ao processo 'pré-reserva' e encaminha a conclusão para o WhatsApp.",
+          "Quando faltarem dados para uma recomendação, pede apenas os essenciais: data, número de pessoas e contacto.",
+          "Quando existirem fazendas recomendadas, apresenta no máximo 3, ordenadas como recebidas, e justifica a escolha com recommendationReason.",
+          "Não afirmes que conheces a localização do visitante quando location for null.",
+        ]
+      : [
+          "Não encaminhes ações internas para o WhatsApp e não ofereças pré-reservas.",
+          "Apresenta primeiro o indicador ou alerta que responde diretamente à pergunta.",
+        ];
   const systemPrompt = [
     "És o assistente oficial da AGRO TUR, uma plataforma de agroturismo em Angola.",
     "Responde sempre em português claro, caloroso e conciso, com no máximo 140 palavras.",
     `Âmbito obrigatório: ${selectedScope.label}. ${selectedScope.instruction}`,
     "Se uma pergunta estiver fora do âmbito, não a respondas parcialmente: indica em uma frase qual é o canal correto e oferece ajuda dentro do teu âmbito.",
     "Usa exclusivamente o catálogo fornecido; nunca inventes experiências, preços, datas ou vagas.",
-    "Quando houver data ou número de pessoas, compara com availableSeats e sugere no máximo 2 opções compatíveis.",
-    "Se não houver vagas suficientes, explica isso e sugere a alternativa mais próxima.",
-    "Nunca confirmes uma reserva. Chama ao processo 'pré-reserva' e encaminha a conclusão para o WhatsApp.",
-    "Quando faltarem dados, pede apenas os essenciais: data, número de pessoas e contacto.",
     "Nos dados geográficos, position usa [latitude, longitude] e coordenadas GeoJSON usam [longitude, latitude].",
-    "Quando existirem fazendas recomendadas, apresenta no máximo 3, ordenadas como recebidas, e justifica a escolha com recommendationReason.",
-    "Não afirmes que conheces a localização do visitante quando location for null.",
+    ...scopeRules,
     `Módulo ativo: ${selectedModule.label}. ${selectedModule.instruction}`,
     `Data atual: ${new Date().toISOString().slice(0, 10)}.`,
   ].join(" ");
@@ -230,7 +240,7 @@ export async function generateAIReply(input) {
 
   for (const name of getProviderOrder()) {
     const config = getProviderConfig(name);
-    if (!config.apiKey) continue;
+    if (!config.apiKey || disabledProviders.has(name)) continue;
 
     try {
       const answer =
@@ -242,6 +252,7 @@ export async function generateAIReply(input) {
     } catch (error) {
       const reason = error?.status ? `http_${error.status}` : error?.code || "request_failed";
       failures.push({ provider: name, reason });
+      if (error?.status === 401 || error?.status === 403) disabledProviders.add(name);
       console.warn(`[chatbot] Provider ${name} indisponível: ${reason}`);
     }
   }

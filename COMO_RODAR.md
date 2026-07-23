@@ -139,8 +139,10 @@ Credenciais iniciais criadas pelo seed:
 
 Permissões:
 
-- `MANAGER`: indicadores, reservas, aprovação/cancelamento e gestão global;
-- `FARMER`: operação da fazenda, experiências, produtos, estoque e mapa GIS;
+- `MANAGER`: visão executiva, indicadores, faturamento, ocupação e
+  aprovação/cancelamento de reservas;
+- `FARMER`: painel operacional, agenda, experiências, produtos, estoque e edição
+  do mapa GIS;
 - `TOURIST`: módulo público. O endpoint de registo nunca permite escolher um
   perfil administrativo.
 
@@ -148,6 +150,17 @@ Na área `/conta`, o visitante pode criar uma conta, entrar, consultar as reserv
 associadas ao seu email e receber novas recomendações. A API usa
 `GET /api/bookings/mine` para devolver apenas as reservas do utilizador
 autenticado.
+
+### Contextos do chatbot
+
+O corpo de `POST /api/chatbot` aceita `scope`:
+
+- `tourist`: serviços, produtos, experiências e recomendações públicas;
+- `manager`: dados de gestão, apenas para JWT com função `MANAGER`;
+- `farmer`: operação da fazenda, apenas para JWT com função `FARMER`.
+
+Cada contexto possui módulos e sugestões próprios. Combinações inválidas de
+contexto/módulo recebem `400`; acesso interno com perfil incorreto recebe `403`.
 
 Altere estas credenciais antes de disponibilizar o sistema publicamente.
 

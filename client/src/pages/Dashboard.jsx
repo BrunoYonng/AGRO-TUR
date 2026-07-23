@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Banknote, BedDouble, CalendarCheck, Check, ChevronRight, Package, Plus, ShieldX, X } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, Banknote, BedDouble, CalendarCheck, Check, Clock3, MapPinned, Package, Plus, ShieldX, Sprout, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -34,6 +34,7 @@ export function Dashboard() {
     { id: "p2", name: "Mel Silvestre 500ml", sku: "MEL-500", stock: 18, unit: "frasco", price: 5500 },
     { id: "p3", name: "Cabaz da Horta", sku: "CAB-001", stock: 9, unit: "cabaz", price: 7500 },
   ]);
+  const [areas, setAreas] = useState([]);
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
@@ -45,14 +46,25 @@ export function Dashboard() {
         setAuthenticated(false);
         setUser(null);
       });
-    Promise.allSettled([
-      api("/bookings?limit=10").then(setBookings),
-      api("/experiences").then(setExperiences),
-      api("/dashboard/weekly").then(setWeekly),
-      api("/dashboard/summary").then(setSummary),
-      api("/products").then(setProducts),
-    ]);
   }, [authenticated]);
+
+  useEffect(() => {
+    if (!authenticated || !user) return;
+    if (user.role === "MANAGER") {
+      Promise.allSettled([
+        api("/bookings?limit=10").then(setBookings),
+        api("/dashboard/weekly").then(setWeekly),
+        api("/dashboard/summary").then(setSummary),
+      ]);
+    }
+    if (user.role === "FARMER") {
+      Promise.allSettled([
+        api("/experiences").then(setExperiences),
+        api("/products").then(setProducts),
+        api("/areas").then(setAreas),
+      ]);
+    }
+  }, [authenticated, user?.role]);
 
   async function updateStatus(id, status) {
     if (user?.role !== "MANAGER") return;
@@ -86,17 +98,28 @@ export function Dashboard() {
       </main>
     );
   }
-  const canApproveBookings = user?.role === "MANAGER";
-  const canManageCatalog = ["MANAGER", "FARMER"].includes(user?.role);
+  if (user?.role === "FARMER") {
+    return (
+      <FarmerDashboard
+        user={user}
+        experiences={experiences}
+        products={products}
+        areas={areas}
+        modal={modal}
+        setModal={setModal}
+        setExperiences={setExperiences}
+        setProducts={setProducts}
+      />
+    );
+  }
 
   return (
     <AdminShell
       user={user}
-      title="Visão geral"
-      subtitle={`${roleLabels[user?.role] || "Equipa"} · operação de ${new Intl.DateTimeFormat("pt-AO", { month: "long", year: "numeric" }).format(new Date())}`}
-      action={canManageCatalog ? <Button size="sm" onClick={() => setModal("experience")}><Plus className="size-4" /> <span className="hidden sm:inline">Nova experiência</span></Button> : null}
+      title="Visão executiva"
+      subtitle={`Gestão · ${new Intl.DateTimeFormat("pt-AO", { month: "long", year: "numeric" }).format(new Date())}`}
     >
-      <section className="grid gap-px overflow-hidden rounded-2xl border bg-black/10 sm:grid-cols-2 xl:grid-cols-4">
+      <section id="financeiro" className="scroll-mt-6 grid gap-px overflow-hidden rounded-2xl border bg-black/10 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -152,7 +175,7 @@ export function Dashboard() {
       <section id="reservas" className="mt-6 overflow-hidden rounded-2xl bg-white">
         <div className="flex items-center justify-between border-b px-5 py-5 sm:px-6">
           <div><h2 className="font-bold">Últimas reservas</h2><p className="mt-1 text-xs text-stone-500">Pedidos mais recentes e respetivo estado</p></div>
-          <button className="flex items-center gap-1 text-sm font-bold text-agro-600">Ver todas <ChevronRight className="size-4" /></button>
+          <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Últimas 10</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
@@ -171,12 +194,12 @@ export function Dashboard() {
                     <td className="font-semibold">{money.format(Number(booking.totalAmount))}</td>
                     <td><Badge tone={tone}>{label}</Badge></td>
                     <td className="pr-6 text-right">
-                      {booking.status === "PENDING" && canApproveBookings ? (
+                      {booking.status === "PENDING" ? (
                         <div className="flex justify-end gap-1">
                           <button title="Aprovar" onClick={() => updateStatus(booking.id, "APPROVED")} className="rounded-lg p-2 text-agro-600 hover:bg-agro-50"><Check className="size-4" /></button>
                           <button title="Cancelar" onClick={() => updateStatus(booking.id, "CANCELLED")} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><X className="size-4" /></button>
                         </div>
-                      ) : <button className="text-xs font-bold text-stone-500">{booking.status === "PENDING" ? "Só o gestor aprova" : "Detalhes"}</button>}
+                      ) : <button className="text-xs font-bold text-stone-500">Detalhes</button>}
                     </td>
                   </tr>
                 );
@@ -186,26 +209,125 @@ export function Dashboard() {
         </div>
       </section>
 
-      <section id="experiencias" className="mt-6 grid gap-6 lg:grid-cols-2">
+    </AdminShell>
+  );
+}
+
+function FarmerDashboard({
+  user,
+  experiences,
+  products,
+  areas,
+  modal,
+  setModal,
+  setExperiences,
+  setProducts,
+}) {
+  const upcoming = [...experiences]
+    .filter((experience) => new Date(experience.date) >= new Date())
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const nextExperience = upcoming[0];
+  const lowStock = products.filter((product) => product.stock < 10);
+  const operationalMetrics = [
+    { label: "Experiências ativas", value: experiences.length, detail: `${upcoming.length} com data futura`, icon: Sprout },
+    { label: "Próxima atividade", value: nextExperience ? shortDate.format(new Date(nextExperience.date)) : "Sem agenda", detail: nextExperience?.name || "Cadastre uma experiência", icon: Clock3 },
+    { label: "Estoque baixo", value: lowStock.length, detail: lowStock[0]?.name || "Nenhum produto crítico", icon: AlertTriangle },
+    { label: "Áreas GIS", value: areas.length, detail: "Zonas mapeadas", icon: MapPinned },
+  ];
+
+  return (
+    <AdminShell
+      user={user}
+      title="Operação da fazenda"
+      subtitle="Agenda, catálogo, estoque e território"
+      action={<Button size="sm" onClick={() => setModal("experience")}><Plus className="size-4" /> <span className="hidden sm:inline">Nova experiência</span></Button>}
+    >
+      <section className="grid gap-px overflow-hidden rounded-2xl border bg-black/10 sm:grid-cols-2 xl:grid-cols-4">
+        {operationalMetrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <article key={metric.label} className="bg-white p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-stone-500">{metric.label}</p>
+                <Icon className="size-4 text-agro-500" />
+              </div>
+              <p className="mt-4 min-h-8 text-2xl font-black tracking-tight">{metric.value}</p>
+              <p className="mt-2 truncate text-xs text-stone-500">{metric.detail}</p>
+            </article>
+          );
+        })}
+      </section>
+
+      <section id="experiencias" className="scroll-mt-6 mt-6 grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
         <ManagementList
-          title="Experiências"
-          description="Atividades publicadas no catálogo"
+          title="Experiências e atividades"
+          description="Conteúdo publicado no catálogo turístico"
           items={experiences}
-          onAdd={canManageCatalog ? () => setModal("experience") : null}
+          onAdd={() => setModal("experience")}
           render={(item) => (
-            <><div><p className="font-bold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{shortDate.format(new Date(item.date))} · {item.capacity} vagas</p></div><p className="font-bold">{money.format(Number(item.price))}</p></>
+            <>
+              <div>
+                <p className="font-bold">{item.name}</p>
+                <p className="mt-1 text-xs text-stone-500">{shortDate.format(new Date(item.date))} · {item.capacity} vagas · {item.duration || "Duração por definir"}</p>
+              </div>
+              <p className="font-bold">{money.format(Number(item.price))}</p>
+            </>
           )}
         />
-        <div id="produtos">
-          <ManagementList
-            title="Estoque da loja"
-            description="Produtos agrícolas disponíveis"
-            items={products}
-            onAdd={canManageCatalog ? () => setModal("product") : null}
-            render={(item) => (
-              <><div><p className="font-bold">{item.name}</p><p className="mt-1 text-xs text-stone-500">{item.sku} · {money.format(Number(item.price))}</p></div><Badge tone={item.stock < 10 ? "red" : "green"}>{item.stock} {item.unit}</Badge></>
-            )}
-          />
+        <article className="rounded-2xl bg-agro-900 p-6 text-white">
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-sun">Próximas atividades</p>
+          <div className="mt-5 divide-y divide-white/15 border-y border-white/15">
+            {upcoming.slice(0, 4).map((experience) => (
+              <div key={experience.id} className="flex items-center justify-between gap-4 py-4">
+                <div>
+                  <p className="font-bold">{experience.name}</p>
+                  <p className="mt-1 text-xs text-white/55">{shortDate.format(new Date(experience.date))}</p>
+                </div>
+                <Badge tone="yellow">{experience.capacity} vagas</Badge>
+              </div>
+            ))}
+            {upcoming.length === 0 && <p className="py-6 text-sm text-white/60">Nenhuma atividade futura cadastrada.</p>}
+          </div>
+        </article>
+      </section>
+
+      <section id="produtos" className="scroll-mt-6 mt-6">
+        <ManagementList
+          title="Produtos e estoque"
+          description="Inventário da loja da fazenda"
+          items={products}
+          onAdd={() => setModal("product")}
+          render={(item) => (
+            <>
+              <div>
+                <p className="font-bold">{item.name}</p>
+                <p className="mt-1 text-xs text-stone-500">{item.sku} · {money.format(Number(item.price))}</p>
+              </div>
+              <Badge tone={item.stock < 10 ? "red" : "green"}>{item.stock} {item.unit}</Badge>
+            </>
+          )}
+        />
+      </section>
+
+      <section id="mapa-gis" className="scroll-mt-6 mt-6 overflow-hidden rounded-2xl bg-white">
+        <div className="flex flex-col justify-between gap-4 border-b px-5 py-5 sm:flex-row sm:items-center sm:px-6">
+          <div>
+            <h2 className="font-bold">Mapa e áreas GIS</h2>
+            <p className="mt-1 text-xs text-stone-500">Zonas de plantação, animais, lazer e serviço</p>
+          </div>
+          <Link to="/mapa?admin=1"><Button variant="outline" size="sm">Abrir editor GIS <ArrowRight className="size-4" /></Button></Link>
+        </div>
+        <div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          {areas.slice(0, 4).map((area) => (
+            <div key={area.id} className="px-5 py-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-bold">{area.name}</p>
+                <Badge>{area.type}</Badge>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-stone-500">{area.description}</p>
+            </div>
+          ))}
+          {areas.length === 0 && <p className="px-5 py-8 text-sm text-stone-500">Nenhuma área cadastrada.</p>}
         </div>
       </section>
 

@@ -30,12 +30,22 @@ Perfis de demonstração criados pelo seed:
 | Fazendeiro | `fazendeiro@agrotur.ao` | `Fazenda@2026` |
 | Visitante | `visitante@agrotur.ao` | `Visitante@2026` |
 
-O gestor controla reservas e a operação global. O fazendeiro mantém experiências,
-produtos e áreas GIS. Novos registos feitos por `/api/auth/register` recebem
+O gestor controla indicadores, faturamento e reservas. O fazendeiro mantém
+experiências, produtos, estoque e áreas GIS. Cada perfil possui painel, menus e
+permissões de API próprios. Novos registos feitos por `/api/auth/register` recebem
 sempre o perfil seguro `TOURIST`.
 
 A área do visitante está disponível em `/conta` e inclui criação de conta, perfil,
 reservas associadas ao email, próxima visita e recomendações de fazendas.
+
+Os chats são separados por contexto e permissão:
+
+- visitante: serviços, produtos, experiências, preços e recomendações;
+- gestor: reservas, faturamento, ocupação e indicadores;
+- fazendeiro: agenda, experiências, estoque, produtos e áreas GIS.
+
+Os contextos internos exigem JWT e o perfil correspondente; não dependem apenas
+da interface para proteger os dados.
 
 O chatbot suporta Gemini, Groq e OpenAI, com fallback automático entre providers.
 Sem nenhuma chave configurada, continua operacional com respostas locais baseadas

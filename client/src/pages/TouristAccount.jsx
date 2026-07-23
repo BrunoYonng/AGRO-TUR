@@ -174,7 +174,7 @@ export function TouristAccount() {
           </>
         )}
       </section>
-      <Chatbot />
+      <Chatbot scope="tourist" />
     </main>
   );
 }
@@ -294,7 +294,7 @@ function AccountAuth({ onAuthenticated }) {
           </form>
         </section>
       </main>
-      <Chatbot />
+      <Chatbot scope="tourist" />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db.js";
-import { allowRoles, requireAuth } from "../middleware/auth.js";
+import { allowRoles, optionalAuth, requireAuth } from "../middleware/auth.js";
 
 export const areasRouter = Router();
 
@@ -13,15 +13,16 @@ const schema = z.object({
   public: z.boolean().optional(),
 });
 
-areasRouter.get("/", async (_req, res, next) => {
+areasRouter.get("/", optionalAuth, async (req, res, next) => {
   try {
-    res.json(await prisma.farmArea.findMany({ where: { public: true }, orderBy: { name: "asc" } }));
+    const where = req.user?.role === "FARMER" ? {} : { public: true };
+    res.json(await prisma.farmArea.findMany({ where, orderBy: { name: "asc" } }));
   } catch (error) {
     next(error);
   }
 });
 
-areasRouter.post("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
+areasRouter.post("/", requireAuth, allowRoles("FARMER"), async (req, res, next) => {
   try {
     res.status(201).json(await prisma.farmArea.create({ data: schema.parse(req.body) }));
   } catch (error) {
@@ -29,7 +30,7 @@ areasRouter.post("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, 
   }
 });
 
-areasRouter.put("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
+areasRouter.put("/:id", requireAuth, allowRoles("FARMER"), async (req, res, next) => {
   try {
     res.json(
       await prisma.farmArea.update({
@@ -42,7 +43,7 @@ areasRouter.put("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req
   }
 });
 
-areasRouter.delete("/:id", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
+areasRouter.delete("/:id", requireAuth, allowRoles("FARMER"), async (req, res, next) => {
   try {
     await prisma.farmArea.delete({ where: { id: req.params.id } });
     res.status(204).end();

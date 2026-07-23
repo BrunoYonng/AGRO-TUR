@@ -1,15 +1,18 @@
-import { CalendarCheck, LayoutDashboard, LogOut, Map, Menu, Package, Sprout, X } from "lucide-react";
+import { Banknote, CalendarCheck, LayoutDashboard, LogOut, Map, Menu, Package, Sprout, Tractor, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { clearSession, roleLabels } from "../lib/auth";
+import { Chatbot } from "./Chatbot";
 
 const items = [
-  { label: "Visão geral", href: "/dashboard", icon: LayoutDashboard, roles: ["MANAGER", "FARMER"] },
-  { label: "Reservas", href: "/dashboard#reservas", icon: CalendarCheck, roles: ["MANAGER", "FARMER"] },
-  { label: "Experiências", href: "/dashboard#experiencias", icon: Sprout, roles: ["MANAGER", "FARMER"] },
-  { label: "Produtos", href: "/dashboard#produtos", icon: Package, roles: ["MANAGER", "FARMER"] },
-  { label: "Mapa GIS", href: "/mapa?admin=1", icon: Map, roles: ["MANAGER", "FARMER"] },
+  { label: "Visão executiva", href: "/dashboard", icon: LayoutDashboard, roles: ["MANAGER"] },
+  { label: "Reservas", href: "/dashboard#reservas", icon: CalendarCheck, roles: ["MANAGER"] },
+  { label: "Financeiro", href: "/dashboard#financeiro", icon: Banknote, roles: ["MANAGER"] },
+  { label: "Operação", href: "/dashboard", icon: Tractor, roles: ["FARMER"] },
+  { label: "Experiências", href: "/dashboard#experiencias", icon: Sprout, roles: ["FARMER"] },
+  { label: "Produtos e estoque", href: "/dashboard#produtos", icon: Package, roles: ["FARMER"] },
+  { label: "Mapa GIS", href: "/dashboard#mapa-gis", icon: Map, roles: ["FARMER"] },
 ];
 
 export function AdminShell({ children, title, subtitle, action, user }) {
@@ -22,7 +25,10 @@ export function AdminShell({ children, title, subtitle, action, user }) {
       <nav className="mt-10 space-y-1">
         {items.filter((item) => item.roles.includes(user?.role)).map((item) => {
           const Icon = item.icon;
-          const active = item.href === "/dashboard" ? location.pathname === "/dashboard" && !location.hash : `${location.pathname}${location.search}` === item.href;
+          const active =
+            item.href === "/dashboard"
+              ? location.pathname === "/dashboard" && !location.hash
+              : `${location.pathname}${location.search}${location.hash}` === item.href;
           return (
             <Link
               key={item.label}
@@ -70,6 +76,7 @@ export function AdminShell({ children, title, subtitle, action, user }) {
         </header>
         <div className="p-5 sm:p-8">{children}</div>
       </main>
+      <Chatbot scope={user?.role === "MANAGER" ? "manager" : "farmer"} />
     </div>
   );
 }

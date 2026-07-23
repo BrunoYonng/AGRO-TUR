@@ -10,7 +10,7 @@ import { PublicNav } from "../components/PublicNav";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { api } from "../lib/api";
-import { canUseDashboard, getStoredUser } from "../lib/auth";
+import { getStoredUser } from "../lib/auth";
 import { demoAreas, points } from "../lib/demo-data";
 
 const labels = { PLANTATION: "Plantação", ANIMALS: "Animais", LEISURE: "Lazer", SERVICE: "Serviço" };
@@ -91,12 +91,12 @@ export function FarmMap() {
     if (!localStorage.getItem("agrotur_token") || !adminUser) {
       return <LoginPanel onLogin={setAdminUser} />;
     }
-    if (adminUser && !canUseDashboard(adminUser)) {
+    if (adminUser.role !== "FARMER") {
       return (
         <main className="grid min-h-screen place-items-center bg-cream px-5 text-center">
           <div className="max-w-md">
             <h1 className="font-display text-4xl">Mapa administrativo restrito.</h1>
-            <p className="mt-4 text-sm text-stone-600">Entre como gestor ou fazendeiro para desenhar e guardar áreas GIS.</p>
+            <p className="mt-4 text-sm text-stone-600">A edição das áreas GIS pertence ao perfil Fazendeiro.</p>
             <Link to="/mapa"><Button className="mt-6">Abrir mapa público</Button></Link>
           </div>
         </main>

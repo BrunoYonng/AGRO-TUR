@@ -52,7 +52,7 @@ bookingsRouter.get("/mine", requireAuth, async (req, res, next) => {
   }
 });
 
-bookingsRouter.get("/", requireAuth, allowRoles("MANAGER", "FARMER"), async (req, res, next) => {
+bookingsRouter.get("/", requireAuth, allowRoles("MANAGER"), async (req, res, next) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 100);
     res.json(

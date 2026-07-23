@@ -5,7 +5,7 @@ import { allowRoles, requireAuth } from "../middleware/auth.js";
 
 export const productsRouter = Router();
 productsRouter.use(requireAuth);
-productsRouter.use(allowRoles("MANAGER", "FARMER"));
+productsRouter.use(allowRoles("FARMER"));
 
 const schema = z.object({
   name: z.string().min(2),

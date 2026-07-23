@@ -1,6 +1,9 @@
 import {
   Armchair,
+  Banknote,
+  BarChart3,
   Bot,
+  CalendarCheck,
   Compass,
   Leaf,
   LoaderCircle,
@@ -8,9 +11,12 @@ import {
   MapPin,
   MapPinned,
   MessageCircle,
+  Package,
   Send,
   Sparkles,
+  Sprout,
   Tags,
+  Tractor,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -18,64 +24,48 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { Button } from "./ui/Button";
 
-const modules = [
-  {
-    id: "discovery",
-    label: "Descobrir",
-    icon: Compass,
-    intro: "Diga-me o que valoriza ou use a sua localização para eu recomendar as melhores fazendas.",
-    suggestions: ["Quais fazendas estão perto de mim?", "Quero a opção mais económica", "Recomenda uma fazenda sustentável"],
+const scopeConfigs = {
+  tourist: {
+    label: "Assistente do visitante",
+    welcome: "Olá! Posso ajudar com experiências, produtos, preços, disponibilidade e recomendações para a sua visita.",
+    modules: [
+      { id: "discovery", label: "Descobrir", icon: Compass, intro: "Diga-me o que valoriza ou use a sua localização para eu recomendar as melhores fazendas.", suggestions: ["Quais fazendas estão perto de mim?", "Quero a opção mais económica", "Recomenda uma fazenda sustentável"] },
+      { id: "general", label: "Serviços", icon: Sparkles, intro: "Posso explicar os serviços e encontrar experiências compatíveis com a sua data e grupo.", suggestions: ["O que recomenda para este fim de semana?", "Somos 4 pessoas"] },
+      { id: "map", label: "Mapa", icon: MapPinned, intro: "Posso explicar o território e abrir no mapa a horta, o lago, o curral ou outras áreas.", suggestions: ["Onde fica o lago?", "Mostra a horta no mapa", "Que áreas posso visitar?"] },
+      { id: "sustainability", label: "Ecologia", icon: Leaf, intro: "Vamos explorar solo, água, biodiversidade e práticas sustentáveis da fazenda.", suggestions: ["Como cuidam do solo?", "Há atividades sobre biodiversidade?"] },
+      { id: "offers", label: "Ofertas", icon: Tags, intro: "Comparo preços, vagas, produtos e duração para encontrar a opção com melhor valor.", suggestions: ["Qual é a opção mais económica?", "Que produtos estão disponíveis?", "Melhor opção para 4 pessoas"] },
+      { id: "leisure", label: "Lazer", icon: Armchair, intro: "Ajudo a escolher pelo conforto, ritmo, alimentação, crianças ou tempo disponível.", suggestions: ["Quero uma visita tranquila", "O que fazer com crianças?"] },
+    ],
   },
-  {
-    id: "general",
-    label: "Geral",
-    icon: Sparkles,
-    intro: "Conte-me o que procura e combino interesses, data e disponibilidade.",
-    suggestions: ["O que recomenda para este fim de semana?", "Somos 4 pessoas"],
+  manager: {
+    label: "Copiloto de gestão",
+    welcome: "Olá! Analiso reservas, faturamento, ocupação e desempenho para apoiar as suas decisões de gestão.",
+    modules: [
+      { id: "management", label: "Gestão", icon: BarChart3, intro: "Posso resumir a operação e destacar os indicadores que precisam de atenção.", suggestions: ["Resume a operação deste mês", "O que precisa de atenção?", "Como está a ocupação?"] },
+      { id: "booking_ops", label: "Reservas", icon: CalendarCheck, intro: "Analiso estados e volume de reservas para ajudar a priorizar ações.", suggestions: ["Quantas reservas estão pendentes?", "Resume as últimas reservas", "Que reservas exigem ação?"] },
+      { id: "finance", label: "Financeiro", icon: Banknote, intro: "Explico faturamento e desempenho comercial com base nos dados do dashboard.", suggestions: ["Qual é o faturamento do mês?", "Qual produto vende mais?", "Resume o desempenho comercial"] },
+    ],
   },
-  {
-    id: "map",
-    label: "Mapa",
-    icon: MapPinned,
-    intro: "Posso explicar o território e abrir no mapa a horta, o lago, o curral ou outras áreas.",
-    suggestions: ["Onde fica o lago?", "Mostra a horta no mapa", "Que áreas posso visitar?"],
+  farmer: {
+    label: "Assistente da fazenda",
+    welcome: "Olá! Ajudo com experiências, produtos, estoque, agenda e áreas GIS da fazenda.",
+    modules: [
+      { id: "farm_ops", label: "Operação", icon: Tractor, intro: "Posso resumir atividades, recursos e pontos de atenção da operação.", suggestions: ["Resume a operação da fazenda", "Que atividade acontece primeiro?", "Que área precisa de atenção?"] },
+      { id: "catalog_ops", label: "Experiências", icon: Sprout, intro: "Ajudo a consultar agenda, capacidade e experiências cadastradas.", suggestions: ["Lista as próximas experiências", "Qual atividade tem mais vagas?", "Compara capacidades"] },
+      { id: "inventory", label: "Estoque", icon: Package, intro: "Analiso produtos, vendas e níveis de estoque da loja.", suggestions: ["Quais produtos têm estoque baixo?", "Qual produto vende mais?", "Resume o estoque"] },
+      { id: "gis_ops", label: "Mapa GIS", icon: MapPinned, intro: "Ajudo a interpretar e organizar as áreas mapeadas da fazenda.", suggestions: ["Lista as áreas GIS", "Que zonas estão mapeadas?", "Resume a área de plantação"] },
+    ],
   },
-  {
-    id: "sustainability",
-    label: "Ecologia",
-    icon: Leaf,
-    intro: "Vamos explorar solo, água, biodiversidade e práticas sustentáveis da fazenda.",
-    suggestions: ["Como cuidam do solo?", "Há atividades sobre biodiversidade?"],
-  },
-  {
-    id: "offers",
-    label: "Ofertas",
-    icon: Tags,
-    intro: "Comparo preços, vagas e duração para encontrar a opção com melhor valor.",
-    suggestions: ["Qual é a opção mais económica?", "Melhor opção para 4 pessoas"],
-  },
-  {
-    id: "leisure",
-    label: "Lazer",
-    icon: Armchair,
-    intro: "Ajudo a escolher pelo conforto, ritmo, alimentação, crianças ou tempo disponível.",
-    suggestions: ["Quero uma visita tranquila", "O que fazer com crianças?"],
-  },
-];
-
-const welcome = {
-  id: "welcome",
-  role: "bot",
-  text: "Olá! Escolha um tema ou conte-me o que gostaria de viver na fazenda.",
 };
 
-function getSessionId() {
-  const existing = sessionStorage.getItem("agrotur_chat");
+function getSessionId(scope) {
+  const key = `agrotur_chat_${scope}`;
+  const existing = sessionStorage.getItem(key);
   if (existing) return existing;
   const created =
     globalThis.crypto?.randomUUID?.() ||
     `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  sessionStorage.setItem("agrotur_chat", created);
+  sessionStorage.setItem(key, created);
   return created;
 }
 
@@ -202,10 +192,14 @@ function BotMessage({ message, onTypingDone, onProgress }) {
   );
 }
 
-export function Chatbot() {
+export function Chatbot({ scope = "tourist" }) {
+  const scopeConfig = scopeConfigs[scope] || scopeConfigs.tourist;
+  const modules = scopeConfig.modules;
   const [open, setOpen] = useState(false);
-  const [activeModule, setActiveModule] = useState("discovery");
-  const [messages, setMessages] = useState([welcome]);
+  const [activeModule, setActiveModule] = useState(modules[0].id);
+  const [messages, setMessages] = useState([
+    { id: `welcome-${scope}`, role: "bot", text: scopeConfig.welcome },
+  ]);
   const [suggestions, setSuggestions] = useState(modules[0].suggestions);
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -243,7 +237,8 @@ export function Chatbot() {
         body: JSON.stringify({
           message,
           module: activeModule,
-          sessionId: getSessionId(),
+          scope,
+          sessionId: getSessionId(scope),
           location: locationOverride || location,
         }),
       });
@@ -257,15 +252,15 @@ export function Chatbot() {
           provider: data.provider,
           mapTargets: data.mapTargets,
           farmRecommendations:
-            activeModule === "discovery" || /\bfazenda/i.test(message)
+            scope === "tourist" && (activeModule === "discovery" || /\bfazenda/i.test(message))
               ? data.farmRecommendations
               : [],
-          whatsappUrl: data.whatsappUrl,
+          whatsappUrl: scope === "tourist" ? data.whatsappUrl : null,
           animate: true,
         },
       ]);
       setSuggestions(data.suggestions || modules.find((item) => item.id === activeModule)?.suggestions || []);
-    } catch {
+    } catch (requestError) {
       setSuggestions(modules.find((item) => item.id === activeModule)?.suggestions || []);
       setTyping(true);
       setMessages((current) => [
@@ -273,8 +268,15 @@ export function Chatbot() {
         {
           id: `bot-error-${Date.now()}`,
           role: "bot",
-          text: "A ligação está instável. Posso continuar pelo WhatsApp para preparar a sua visita.",
-          whatsappUrl: `https://wa.me/244923000000?text=${encodeURIComponent(`Olá AGRO TUR! ${message}`)}`,
+          text:
+            requestError.message ||
+            (scope === "tourist"
+              ? "A ligação está instável. Posso continuar pelo WhatsApp para preparar a sua visita."
+              : "Não foi possível consultar os dados desta área agora."),
+          whatsappUrl:
+            scope === "tourist"
+              ? `https://wa.me/244923000000?text=${encodeURIComponent(`Olá AGRO TUR! ${message}`)}`
+              : null,
           animate: true,
         },
       ]);
@@ -344,8 +346,8 @@ export function Chatbot() {
               <Bot className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="font-bold">Assistente AGRO TUR</h2>
-              <p className="truncate text-xs text-white/65">{selectedModule?.label} · guia inteligente</p>
+              <h2 className="font-bold">{scopeConfig.label}</h2>
+              <p className="truncate text-xs text-white/65">{selectedModule?.label} · contexto protegido</p>
             </div>
             <button aria-label="Fechar chat" onClick={() => setOpen(false)}>
               <X />
@@ -373,7 +375,7 @@ export function Chatbot() {
               );
             })}
           </div>
-          {activeModule === "discovery" && (
+          {scope === "tourist" && activeModule === "discovery" && (
             <button
               type="button"
               disabled={loading || typing || locationStatus === "loading"}
@@ -454,7 +456,11 @@ export function Chatbot() {
               disabled={loading || typing}
               onChange={(event) => setValue(event.target.value)}
               placeholder={
-                activeModule === "map"
+                scope === "manager"
+                  ? "Pergunte sobre a gestão..."
+                  : scope === "farmer"
+                    ? "Pergunte sobre a operação..."
+                    : activeModule === "map"
                   ? "Ex.: Mostra-me o lago..."
                   : activeModule === "offers"
                     ? "Ex.: Somos 4, qual compensa?"
